@@ -1,0 +1,22 @@
+{
+  "calibration_seed": 20260710,
+  "validation_seed": 20261710,
+  "test_seed": 20260710,
+  "calibration_scenarios": 2700,
+  "calibration_scenarios_per_l9_row": 300,
+  "validation_scenarios": 1500,
+  "orthogonal_array": "L9(3^4)",
+  "factors": {
+    "theta_e": [0.45, 0.55, 0.65],
+    "p_q": [0.62, 0.82, 0.92],
+    "p_g": [0.60, 0.80, 0.90],
+    "lambda_l": [0.10, 0.20, 0.30]
+  },
+  "selected_parameters": {
+    "theta_e": 0.55,
+    "p_q": 0.82,
+    "p_g": 0.90,
+    "lambda_l": 0.10
+  },
+  "objective": "J_p = 0.24*T + 0.20*Q + 0.20*C + 0.16*B - 0.10*L - 0.06*W - 0.04*R_u"
+}

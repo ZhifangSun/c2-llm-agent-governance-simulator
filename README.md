@@ -8,11 +8,14 @@ The package contains a shareable symbolic simulator, synthetic scenario generato
 ## Contents
 
 - `code/c2_experiments.py`: synthetic scenario generator, policy simulator, comparison experiments, ablations, sensitivity analysis, statistical tests, and aggregate figures.
+- `code/run_l9_calibration.py`: L9 orthogonal calibration and validation script.
 - `code/generate_coa_timeline_overlay.py`: data-driven COA execution timeline figures for the selected case study.
 - `outputs/experiment_*.csv`: raw and aggregate outputs used by the manuscript tables, diagnostics, and statistical tests.
+- `outputs/l9_*.csv`: orthogonal calibration, range analysis, and validation outputs.
 - `outputs/coa_timeline_*.csv`: data records behind the COA execution timeline figures.
 - `figures/*.pdf`: generated experimental figures used in the manuscript.
 - `docs/SIMULATOR_SPECIFICATION.md`: implemented simulator rules, parameter definitions, scenario distributions, and metric equations.
+- `config/calibration_config.json`: calibration seeds, L9 factor levels, and selected default parameters.
 - `experiment_config.json`: seeds, scenario counts, selected parameters, and reproduction commands.
 - `requirements.txt`: Python dependencies.
 
@@ -30,19 +33,16 @@ Run the main experiments:
 python code/c2_experiments.py
 ```
 
+Run the L9 calibration and validation:
+
+```bash
+python code/run_l9_calibration.py
+```
+
 Run the COA timeline figure script:
 
 ```bash
 python code/generate_coa_timeline_overlay.py
 ```
 
-The main script regenerates the `outputs/experiment_*.csv` files and the aggregate experimental figures.
-
-## Manuscript Link
-
-After uploading this folder to an anonymous or public GitHub repository, replace the manuscript placeholder URL with the real repository URL:
-
-```text
-https://github.com/USERNAME/c2-llm-agent-governance-simulator
-```
-# c2-llm-agent-governance-simulator
+The main script regenerates the `outputs/experiment_*.csv` files and the aggregate experimental figures. The calibration script regenerates `outputs/l9_calibration_results.csv`, `outputs/l9_range_analysis.csv`, and `outputs/l9_validation_results.csv`.

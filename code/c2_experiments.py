@@ -142,7 +142,7 @@ POLICIES = {
         "label": "Full framework",
         "evidence_capture": 0.86,
         "critique_rate": 0.82,
-        "gate_strictness": 0.80,
+        "gate_strictness": 0.90,
         "role_boundedness": 0.86,
         "flow_control": 0.86,
         "load_factor": 0.88,
@@ -374,14 +374,13 @@ def score(coa, ev, crit, ctl, scenario, policy, params):
         captured = len([item for item in linked if item["captured"]]) / len(linked)
         verified = len([item for item in linked if item["state"] == "verified"]) / len(linked)
         uncertain = len([item for item in linked if item["state"] != "verified"]) / len(linked)
-        weak_admitted = len(
+        low_reliability_verified = len(
             [item for item in linked if item["state"] == "verified" and item["reliability"] < WEAK_EVIDENCE_FLOOR]
         ) / len(linked)
-        weak_verified = weak_admitted
         source_diversity = len({item["source"] for item in linked}) / 12
     else:
         captured = verified = uncertain = 0.0
-        weak_admitted = weak_verified = source_diversity = 0.0
+        low_reliability_verified = source_diversity = 0.0
     traceability = clamp(0.62 * captured + 0.38 * verified)
     robustness = clamp(
         0.45 + 0.25 * crit["coverage"] + 0.20 * verified - 0.20 * uncertain - scenario["uncertainty"] * 0.06
@@ -413,7 +412,7 @@ def score(coa, ev, crit, ctl, scenario, policy, params):
         ctl=ctl,
         crit=crit,
         uncertain=uncertain,
-        weak_admitted=weak_admitted,
+        low_reliability_verified=low_reliability_verified,
         unresolved_risk_rate=unresolved_risk_rate,
     )
     return {
@@ -424,17 +423,16 @@ def score(coa, ev, crit, ctl, scenario, policy, params):
         "risk_penalty": risk_penalty,
         "quality": quality,
         "uncertain": uncertain,
-        "weak_admitted": weak_admitted,
-        "weak_verified": weak_verified,
+        "low_reliability_verified": low_reliability_verified,
         "source_diversity": source_diversity,
         "unresolved_risk_rate": unresolved_risk_rate,
         "alternative_rule_score": alternative_rule_score,
     }
 
 
-def independent_rule_audit(coa, scenario, ctl, crit, uncertain, weak_admitted, unresolved_risk_rate):
+def independent_rule_audit(coa, scenario, ctl, crit, uncertain, low_reliability_verified, unresolved_risk_rate):
     """Second evaluator used for robustness auditing, not for COA selection."""
-    evidence_precision_proxy = clamp(1.0 - weak_admitted - 0.50 * uncertain)
+    evidence_precision_proxy = clamp(1.0 - low_reliability_verified - 0.50 * uncertain)
     rule_compliance = clamp(
         0.52
         + 0.18 * ctl["gate_closure"]
@@ -448,7 +446,9 @@ def independent_rule_audit(coa, scenario, ctl, crit, uncertain, weak_admitted, u
     temporal_consistency = clamp(
         coa["intent"] + 0.08 * ctl["flow_compliance"] - 0.12 * scenario["time_pressure"] - 0.08 * unresolved_risk_rate
     )
-    risk_exposure = clamp(coa["risk"] + 0.12 * uncertain + 0.08 * scenario["uncertainty"] + 0.05 * weak_admitted)
+    risk_exposure = clamp(
+        coa["risk"] + 0.12 * uncertain + 0.08 * scenario["uncertainty"] + 0.05 * low_reliability_verified
+    )
     return clamp(
         0.27 * rule_compliance
         + 0.25 * resource_feasibility
@@ -487,16 +487,15 @@ def run_policy(scenario, policy_key, policy, params):
         "verified_coverage": len([item for item in ev if item["state"] == "verified"]) / len(ev),
         "critique_coverage": mean(lambda item: item["crit"]["coverage"]),
         "critique_effective": mean(lambda item: item["crit"]["effective"]),
-        "accepted_challenge_rate": mean(lambda item: item["crit"]["accepted"] / max(1, item["crit"]["severe"])),
+        "severe_issue_acceptance_ratio": mean(lambda item: item["crit"]["accepted"] / max(1, item["crit"]["severe"])),
         "issue_severity": mean(lambda item: item["crit"]["severe"]),
         "flow_compliance": ctl["flow_compliance"],
         "role_compliance": ctl["role_compliance"],
         "gate_closure_rate": ctl["gate_closure"],
         "authority_violations": ctl["authority_violations"],
         "cognitive_load": selected["sc"]["cognitive_load"],
-        "weak_claim_admission_rate": linked_selected["weak_admitted"],
-        "weak_verified_rate": linked_selected["weak_verified"],
-        "unsupported_claim_rate": linked_selected["uncertain"],
+        "low_reliability_verified_claim_proportion": linked_selected["low_reliability_verified"],
+        "non_verified_linked_claim_ratio": linked_selected["uncertain"],
         "unresolved_risk_rate": linked_selected["unresolved_risk_rate"],
         "source_diversity": linked_selected["source_diversity"],
         "alternative_rule_score": linked_selected["alternative_rule_score"],
@@ -802,7 +801,7 @@ def run_sensitivity(scenarios):
         {"name": "high_evidence", "params": {"theta_e": 0.65, "lambda_l": 0.10}, "policy": {}},
         {"name": "low_critique_rate", "params": {"theta_e": 0.55, "lambda_l": 0.10}, "policy": {"critique_rate": 0.62}},
         {"name": "high_critique_rate", "params": {"theta_e": 0.55, "lambda_l": 0.10}, "policy": {"critique_rate": 0.92}},
-        {"name": "strict_gate", "params": {"theta_e": 0.55, "lambda_l": 0.10}, "policy": {"gate_strictness": 0.90}},
+        {"name": "strict_gate", "params": {"theta_e": 0.55, "lambda_l": 0.10}, "policy": {"gate_strictness": 0.96}},
     ]
     rows = []
     for setting in settings:
@@ -849,8 +848,8 @@ def paired_batch_effects(batch_rows, policy_a, policy_b, metric, sesoi=None):
         "seed_batches": len(diffs),
         "mean_diff": s["mean"],
         "sd_diff": s["sd"],
-        "bootstrap_ci_low": lo,
-        "bootstrap_ci_high": hi,
+        "empirical_p025": lo,
+        "empirical_p975": hi,
         "sesoi": "" if sesoi is None else sesoi,
         "within_equivalence_margin": "",
     }
@@ -876,7 +875,7 @@ def run_factorial_interactions(scenarios):
         "role": ("role_boundedness", 0.86),
         "flow": ("flow_control", 0.86),
         "critique": ("critique_rate", 0.82),
-        "gate": ("gate_strictness", 0.80),
+        "gate": ("gate_strictness", 0.90),
     }
     design_rows = []
     scenarios_subset = scenarios[:2000]
@@ -1006,12 +1005,11 @@ def main():
         "verified_coverage",
         "critique_coverage",
         "critique_effective",
-        "accepted_challenge_rate",
+        "severe_issue_acceptance_ratio",
         "issue_severity",
         "authority_violations",
-        "weak_claim_admission_rate",
-        "weak_verified_rate",
-        "unsupported_claim_rate",
+        "low_reliability_verified_claim_proportion",
+        "non_verified_linked_claim_ratio",
         "unresolved_risk_rate",
         "source_diversity",
         "selected_risk_penalty",
@@ -1050,8 +1048,8 @@ def main():
             "selected_traceability",
             "selected_controllability",
             "cognitive_load",
-            "weak_claim_admission_rate",
-            "unsupported_claim_rate",
+            "low_reliability_verified_claim_proportion",
+            "non_verified_linked_claim_ratio",
             "unresolved_risk_rate",
             "selected_risk_penalty",
         ],

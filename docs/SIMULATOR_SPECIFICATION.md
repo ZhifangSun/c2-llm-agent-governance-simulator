@@ -32,7 +32,7 @@ The simulator uses three profile labels with equal probability: anti-UAV, open c
 | Evidence only | 0.78 | 0.22 | 0.20 | 0.30 | 0.42 | 1.12 |
 | Evidence + role | 0.78 | 0.30 | 0.36 | 0.78 | 0.74 | 1.02 |
 | Evidence + critique | 0.78 | 0.78 | 0.40 | 0.42 | 0.50 | 1.08 |
-| Full framework / Ours | 0.86 | 0.82 | 0.80 | 0.86 | 0.86 | 0.88 |
+| Full framework / Ours | 0.86 | 0.82 | 0.90 | 0.86 | 0.86 | 0.88 |
 | COA-GPT-inspired proxy | 0.40 | 0.22 | 0.18 | 0.25 | 0.36 | 1.15 |
 | RAG-inspired proxy | 0.78 | 0.30 | 0.24 | 0.34 | 0.45 | 1.08 |
 | AutoGen-inspired proxy | 0.56 | 0.62 | 0.32 | 0.70 | 0.66 | 1.02 |
@@ -108,7 +108,11 @@ U_syn = cl(0.48F + 0.32I + 0.20(1-R_base) - 0.045xi - 0.035tau - 0.015c/9
 
 Each policy selects the candidate with maximum GPI. Oracle regret is computed against the candidate with maximum U_syn in the same generated candidate set.
 
-Unsupported-claim rate is the fraction of linked claims in the selected COA whose state is not verified. It is an uncertain/assumed/conflicted/expired linked-claim rate, not an assertion that mandatory decision-critical claims are accepted without disclosure.
+Non-verified linked-claim ratio is the fraction of linked claims in the selected COA whose state is not verified. It is an uncertain/assumed/conflicted/expired linked-claim ratio, not an assertion that mandatory decision-critical claims are accepted without disclosure.
+
+Low-reliability verified-claim proportion is the fraction of all linked claims that are verified despite reliability below 0.55. Its denominator is all linked claims, not only low-reliability claims.
+
+Severe-issue acceptance ratio is the ratio of accepted severe issues to all detected severe issues.
 
 Weak-admission rate is the fraction of linked claims that are verified despite reliability below 0.55.
 
@@ -116,7 +120,7 @@ Weak-admission rate is the fraction of linked claims that are verified despite r
 
 The alternative audit evaluator is not used for COA selection. It is a weighting-robustness diagnostic, not an independent external validator.
 
-Let W be weak-admission rate and R_u unresolved-risk rate:
+Let W be low-reliability verified-claim proportion and R_u unresolved-risk rate:
 
 ```text
 E_p = cl(1 - W - 0.50 r_unc)
@@ -143,6 +147,9 @@ The main script exports raw and summary CSV files under `outputs/`. The most imp
 - `experiment_seed_batch_tests.csv`
 - `experiment_factorial_design.csv`
 - `experiment_factorial_effects.csv`
+- `l9_calibration_results.csv`
+- `l9_range_analysis.csv`
+- `l9_validation_results.csv`
 - `experiment_alternative_audit_diagnostics.csv`
 - `experiment_scalability.csv`
 - `coa_timeline_overlay_case.csv`

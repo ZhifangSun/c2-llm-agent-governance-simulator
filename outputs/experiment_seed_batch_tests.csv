@@ -1,6 +1,6 @@
-comparison,metric,seed_batches,mean_diff,sd_diff,bootstrap_ci_low,bootstrap_ci_high,sesoi,within_equivalence_margin
-full_framework - direct_llm,selected_gpi,20,0.246948,0.001212,0.243885,0.248134,,
-full_framework - direct_llm,selected_synthetic_utility,20,0.001775,0.001676,-0.001425,0.004735,0.010000,1
-full_framework - direct_llm,selected_oracle_regret,20,-0.001775,0.001676,-0.005077,0.000307,0.010000,1
-full_framework - evidence_only,selected_gpi,20,0.145561,0.001638,0.143175,0.147449,,
-full_framework - evidence_critique,selected_gpi,20,0.097269,0.001728,0.094786,0.099730,,
+comparison,metric,seed_batches,mean_diff,sd_diff,empirical_p025,empirical_p975,sesoi,within_equivalence_margin
+full_framework - direct_llm,selected_gpi,20,0.255507,0.001264,0.252175,0.256856,,
+full_framework - direct_llm,selected_synthetic_utility,20,0.001811,0.001681,-0.001554,0.004736,0.010000,1
+full_framework - direct_llm,selected_oracle_regret,20,-0.001811,0.001681,-0.005077,0.000325,0.010000,1
+full_framework - evidence_only,selected_gpi,20,0.154120,0.001662,0.151872,0.155974,,
+full_framework - evidence_critique,selected_gpi,20,0.105828,0.001695,0.103077,0.108494,,
