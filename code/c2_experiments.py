@@ -9,7 +9,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = Path(__file__).resolve().parent / "outputs"
+CONFIG_PATH = ROOT / "config" / "calibration_config.json"
+OUT = ROOT / "outputs"
 FIG = ROOT / "figures"
 REPORT = ROOT / "reports"
 OUT.mkdir(parents=True, exist_ok=True)
@@ -17,6 +18,26 @@ FIG.mkdir(parents=True, exist_ok=True)
 REPORT.mkdir(parents=True, exist_ok=True)
 
 seed = 20260710
+
+
+def read_config():
+    if CONFIG_PATH.exists():
+        with CONFIG_PATH.open("r", encoding="utf-8") as fh:
+            return json.load(fh)
+    return {
+        "test_seed": 20262710,
+        "test_scenarios": 10000,
+        "public_method_seed": 20262841,
+        "ablation_seed": 20262787,
+        "sensitivity_seed_base": 20262910,
+        "seed_batch_seed_base": 20263710,
+        "factorial_seed_base": 20267710,
+        "selected_parameters": {"theta_e": 0.55, "p_q": 0.82, "p_g": 0.90, "lambda_l": 0.10},
+    }
+
+
+CONFIG = read_config()
+SELECTED = CONFIG.get("selected_parameters", {})
 
 NATURE = {
     "blue": "#3E6FA3",
@@ -141,8 +162,8 @@ POLICIES = {
     "full_framework": {
         "label": "Full framework",
         "evidence_capture": 0.86,
-        "critique_rate": 0.82,
-        "gate_strictness": 0.90,
+        "critique_rate": SELECTED.get("p_q", 0.82),
+        "gate_strictness": SELECTED.get("p_g", 0.90),
         "role_boundedness": 0.86,
         "flow_control": 0.86,
         "load_factor": 0.88,
@@ -223,8 +244,8 @@ ABLATIONS = {
 }
 
 PARAMS = {
-    "theta_e": 0.55,
-    "lambda_l": 0.10,
+    "theta_e": SELECTED.get("theta_e", 0.55),
+    "lambda_l": SELECTED.get("lambda_l", 0.10),
 }
 
 WEAK_EVIDENCE_FLOOR = 0.55
@@ -598,9 +619,58 @@ def write_csv(path: Path, rows, cols):
             writer.writerow(values)
 
 
+def scenario_record_tables(scenarios):
+    claim_rows = []
+    coa_rows = []
+    scenario_rows = []
+    for scenario in scenarios:
+        scenario_rows.append(
+            {
+                "scenario_id": scenario["id"],
+                "profile": scenario["profile_key"],
+                "complexity": scenario["complexity"],
+                "uncertainty": scenario["uncertainty"],
+                "time_pressure": scenario["time_pressure"],
+                "n_claims": len(scenario["claims"]),
+                "n_coas": len(scenario["coas"]),
+            }
+        )
+        for claim in scenario["claims"]:
+            claim_rows.append(
+                {
+                    "scenario_id": scenario["id"],
+                    "claim_id": claim["id"],
+                    "claim_type": claim["type"],
+                    "source": claim["source"],
+                    "reliability": claim["reliability"],
+                    "conflict_prone": 1 if claim["conflict_prone"] else 0,
+                }
+            )
+        for coa in scenario["coas"]:
+            coa_rows.append(
+                {
+                    "scenario_id": scenario["id"],
+                    "coa_id": coa["id"],
+                    "linked_claim_count": len(coa["claim_ids"]),
+                    "linked_claim_ids": ";".join(coa["claim_ids"]),
+                    "feasibility": coa["feasibility"],
+                    "intent": coa["intent"],
+                    "risk": coa["risk"],
+                }
+            )
+    return scenario_rows, claim_rows, coa_rows
+
+
 def make_figures(summary, rows, ablation_summary, profile_summary, scalability):
     set_nature_style(7.5)
     colors = [NATURE["slate"], NATURE["blue"], NATURE["teal"], NATURE["ochre"], NATURE["green"]]
+    short_policy_labels = {
+        "direct_llm": "Direct",
+        "evidence_only": "Evidence",
+        "evidence_role": "Evidence+Role",
+        "evidence_critique": "Evidence+Critique",
+        "full_framework": "Full",
+    }
 
     metrics = [
         "selected_gpi",
@@ -619,7 +689,7 @@ def make_figures(summary, rows, ablation_summary, profile_summary, scalability):
             [j + (i - 2) * width for j in x],
             vals,
             width=width,
-            label=row["policy_label"],
+            label=short_policy_labels.get(row["policy"], row["policy_label"]),
             color=colors[i],
             edgecolor=NATURE["ink"],
             linewidth=0.35,
@@ -640,7 +710,7 @@ def make_figures(summary, rows, ablation_summary, profile_summary, scalability):
     data = [[row["selected_gpi"] for row in rows if row["policy"] == label] for label in labels]
     box = ax.boxplot(
         data,
-        labels=[POLICIES[item]["label"].replace(" proxy", "").replace(" + ", "\n+ ") for item in labels],
+        labels=[short_policy_labels[item] for item in labels],
         showfliers=False,
         patch_artist=True,
         medianprops={"color": NATURE["ink"], "linewidth": 1.0},
@@ -653,6 +723,7 @@ def make_figures(summary, rows, ablation_summary, profile_summary, scalability):
         patch.set_edgecolor(NATURE["ink"])
         patch.set_linewidth(0.6)
     ax.set_ylabel("Governance Process Index")
+    ax.tick_params(axis="x", labelrotation=25)
     nature_grid(ax)
     fig.tight_layout()
     fig.savefig(FIG / "fig_exp_gpi_boxplot.pdf")
@@ -733,6 +804,13 @@ def make_public_method_figure(public_summary):
         "selected_controllability",
     ]
     colors = [NATURE["slate"], NATURE["blue"], NATURE["purple"], NATURE["ochre"], NATURE["green"]]
+    short_method_labels = {
+        "coa_gpt_style": "COA-GPT",
+        "rag_coa_style": "RAG",
+        "autogen_style": "AutoGen",
+        "masmp_style": "MASMP",
+        "ours": "Ours",
+    }
     fig, ax = plt.subplots(figsize=(8.2, 4.2))
     x = range(len(metrics))
     width = 0.15
@@ -742,7 +820,7 @@ def make_public_method_figure(public_summary):
             [j + (i - 2) * width for j in x],
             vals,
             width=width,
-            label=row["method_label"],
+            label=short_method_labels.get(row["method"], row["method_label"]),
             color=colors[i],
             edgecolor=NATURE["ink"],
             linewidth=0.35,
@@ -760,7 +838,7 @@ def make_public_method_figure(public_summary):
 
 def run_experiment(n: int = 10000):
     global seed
-    seed = 20260710
+    seed = CONFIG.get("test_seed", 20262710)
     scenarios = generate_scenarios(n)
     rows = []
     for scenario in scenarios:
@@ -771,7 +849,7 @@ def run_experiment(n: int = 10000):
 
 def run_public_method_comparison(scenarios):
     global seed
-    seed = 20260710 + 131
+    seed = CONFIG.get("public_method_seed", CONFIG.get("test_seed", 20262710) + 131)
     rows = []
     for scenario in scenarios:
         for key, policy in PUBLIC_METHOD_BASELINES.items():
@@ -785,7 +863,7 @@ def run_public_method_comparison(scenarios):
 
 def run_ablation(scenarios):
     global seed
-    seed = 20260710 + 77
+    seed = CONFIG.get("ablation_seed", CONFIG.get("test_seed", 20262710) + 77)
     rows = []
     for scenario in scenarios:
         for key, policy in ABLATIONS.items():
@@ -804,8 +882,9 @@ def run_sensitivity(scenarios):
         {"name": "strict_gate", "params": {"theta_e": 0.55, "lambda_l": 0.10}, "policy": {"gate_strictness": 0.96}},
     ]
     rows = []
+    base_seed = CONFIG.get("sensitivity_seed_base", CONFIG.get("test_seed", 20262710) + 300)
     for setting in settings:
-        seed = 20260710 + len(setting["name"])
+        seed = base_seed + len(setting["name"])
         params = setting["params"]
         policy = {**POLICIES["full_framework"], **setting["policy"]}
         for scenario in scenarios[:2500]:
@@ -816,8 +895,9 @@ def run_sensitivity(scenarios):
 def run_seed_batches(num_batches: int = 20, scenarios_per_batch: int = 500):
     global seed
     batch_rows = []
+    base_seed = CONFIG.get("seed_batch_seed_base", CONFIG.get("test_seed", 20262710) + 1000)
     for batch in range(num_batches):
-        seed = 20260710 + 1000 + batch * 37
+        seed = base_seed + batch * 37
         scenarios = generate_scenarios(scenarios_per_batch)
         rows = []
         for scenario in scenarios:
@@ -829,7 +909,7 @@ def run_seed_batches(num_batches: int = 20, scenarios_per_batch: int = 500):
             ["selected_gpi", "selected_synthetic_utility", "selected_oracle_regret", "oracle_best_hit", "oracle_top2_hit"],
         )
         for item in summary:
-            batch_rows.append({"batch": batch + 1, "seed": 20260710 + 1000 + batch * 37, **item})
+            batch_rows.append({"batch": batch + 1, "seed": base_seed + batch * 37, **item})
     return batch_rows
 
 
@@ -890,7 +970,7 @@ def run_factorial_interactions(scenarios):
                 policy[key] = value
         policy_key = "f" + "".join(str(levels[factor]) for factor in factors)
         policy["label"] = policy_key
-        seed = 20260710 + 5000 + mask
+        seed = CONFIG.get("factorial_seed_base", CONFIG.get("test_seed", 20262710) + 5000) + mask
         vals = [run_policy(scenario, policy_key, policy, PARAMS) for scenario in scenarios_subset]
         agg = aggregate(vals, ["policy", "policy_label"], ["selected_gpi", "selected_controllability", "selected_traceability"])[0]
         design_rows.append({**levels, **agg})
@@ -988,7 +1068,9 @@ def run_scalability():
 
 
 def main():
-    scenarios, rows = run_experiment(10000)
+    test_scenarios = CONFIG.get("test_scenarios", 10000)
+    scenarios, rows = run_experiment(test_scenarios)
+    scenario_rows, claim_rows, candidate_rows = scenario_record_tables(scenarios)
     metrics = [
         "selected_gpi",
         "selected_synthetic_utility",
@@ -1079,6 +1161,9 @@ def main():
     ]
 
     write_csv(OUT / "experiment_policy_results.csv", rows, list(rows[0].keys()))
+    write_csv(OUT / "scenario_records.csv", scenario_rows, list(scenario_rows[0].keys()))
+    write_csv(OUT / "scenario_claims.csv", claim_rows, list(claim_rows[0].keys()))
+    write_csv(OUT / "candidate_coas.csv", candidate_rows, list(candidate_rows[0].keys()))
     write_csv(OUT / "experiment_comparison_summary.csv", summary, list(summary[0].keys()))
     write_csv(OUT / "experiment_public_method_results.csv", public_method_rows, list(public_method_rows[0].keys()))
     write_csv(OUT / "experiment_public_method_summary.csv", public_method_summary, list(public_method_summary[0].keys()))
@@ -1111,9 +1196,11 @@ def main():
         "## Reproducible Run",
         "",
         "- Script: `code/c2_experiments.py`",
-        "- Scenario count: 10,000",
-        "- Policy observations: 50,000",
-        "- Ablation observations: 50,000",
+        f"- Scenario count: {test_scenarios:,}",
+        f"- Claim records: {len(claim_rows):,}",
+        f"- Candidate COA records: {len(candidate_rows):,}",
+        f"- Policy observations: {len(rows):,}",
+        f"- Ablation observations: {len(ablation_rows):,}",
         "- Sensitivity observations: 15,000",
         "- Scenario profiles: anti-UAV, open event, humanitarian C2",
         "",

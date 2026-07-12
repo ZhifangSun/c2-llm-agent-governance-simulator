@@ -8,7 +8,7 @@ import c2_experiments as exp
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "config" / "calibration_config.json"
-OUT = Path(__file__).resolve().parent / "outputs"
+OUT = ROOT / "outputs"
 OUT.mkdir(parents=True, exist_ok=True)
 
 L9_LEVELS = [
@@ -90,11 +90,8 @@ def main():
         p_q = factors["p_q"][pq_level - 1]
         p_g = factors["p_g"][pg_level - 1]
         lambda_l = factors["lambda_l"][lambda_level - 1]
-        start = (row_id - 1) * cfg["calibration_scenarios_per_l9_row"]
-        end = start + cfg["calibration_scenarios_per_l9_row"]
-
-        exp.seed = cfg["calibration_seed"] + 100 + row_id
-        calibration = evaluate_setting(calibration_scenarios[start:end], theta_e, p_q, p_g, lambda_l)
+        exp.seed = cfg["calibration_seed"] + 100
+        calibration = evaluate_setting(calibration_scenarios, theta_e, p_q, p_g, lambda_l)
         exp.seed = cfg["validation_seed"] + 100
         validation = evaluate_setting(validation_scenarios, theta_e, p_q, p_g, lambda_l)
         rows.append(
@@ -171,71 +168,28 @@ def main():
         )
 
     selected = cfg["selected_parameters"]
-    exp.seed = cfg["calibration_seed"] + 999
-    selected_calibration = evaluate_setting(
-        calibration_scenarios, selected["theta_e"], selected["p_q"], selected["p_g"], selected["lambda_l"]
+    selected_row = next(
+        row
+        for row in rows
+        if abs(row["theta_e"] - selected["theta_e"]) < 1e-12
+        and abs(row["p_q"] - selected["p_q"]) < 1e-12
+        and abs(row["p_g"] - selected["p_g"]) < 1e-12
+        and abs(row["lambda_l"] - selected["lambda_l"]) < 1e-12
     )
-    exp.seed = cfg["validation_seed"] + 100
-    selected_validation = evaluate_setting(
-        validation_scenarios, selected["theta_e"], selected["p_q"], selected["p_g"], selected["lambda_l"]
-    )
-    selected_row = {
-        "row": "range_selected",
-        "theta_e_level": 2,
-        "p_q_level": 2,
-        "p_g_level": 2,
-        "lambda_l_level": 1,
-        "theta_e": selected["theta_e"],
-        "p_q": selected["p_q"],
-        "p_g": selected["p_g"],
-        "lambda_l": selected["lambda_l"],
-        "calibration_J_p": selected_calibration["J_p"],
-        "validation_J_p": selected_validation["J_p"],
-        "calibration_traceability": selected_calibration["traceability"],
-        "calibration_critique_effectiveness": selected_calibration["critique_effectiveness"],
-        "calibration_controllability": selected_calibration["controllability"],
-        "calibration_robustness": selected_calibration["robustness"],
-        "calibration_cognitive_load": selected_calibration["cognitive_load"],
-        "calibration_low_reliability_verified_claim_proportion": selected_calibration[
-            "low_reliability_verified_claim_proportion"
-        ],
-        "calibration_unresolved_risk_rate": selected_calibration["unresolved_risk_rate"],
-        "validation_traceability": selected_validation["traceability"],
-        "validation_critique_effectiveness": selected_validation["critique_effectiveness"],
-        "validation_controllability": selected_validation["controllability"],
-        "validation_robustness": selected_validation["robustness"],
-        "validation_cognitive_load": selected_validation["cognitive_load"],
-        "validation_low_reliability_verified_claim_proportion": selected_validation[
-            "low_reliability_verified_claim_proportion"
-        ],
-        "validation_unresolved_risk_rate": selected_validation["unresolved_risk_rate"],
-    }
-    validation_ranked = sorted(rows + [selected_row], key=lambda item: item["validation_J_p"], reverse=True)
-    prior_value = None
-    prior_rank = 0
-    for position, row in enumerate(validation_ranked, start=1):
-        rank = prior_rank if prior_value is not None and abs(row["validation_J_p"] - prior_value) < 1e-12 else position
-        prior_rank = rank
-        prior_value = row["validation_J_p"]
-        row["validation_rank"] = rank
-        row["validation_margin_to_best"] = validation_ranked[0]["validation_J_p"] - row["validation_J_p"]
-        row["validation_margin_to_second"] = (
-            row["validation_J_p"] - validation_ranked[1]["validation_J_p"] if rank == 1 and len(validation_ranked) > 1 else ""
-        )
 
-    result_columns = list(validation_ranked[0].keys())
+    result_columns = list(rows[0].keys())
     write_csv(OUT / "l9_calibration_results.csv", rows, result_columns)
-    write_csv(OUT / "l9_validation_results.csv", validation_ranked, result_columns)
+    write_csv(OUT / "l9_validation_results.csv", sorted(rows, key=lambda item: item["validation_rank"]), result_columns)
     write_csv(OUT / "l9_range_analysis.csv", range_rows, list(range_rows[0].keys()))
     print(
         json.dumps(
             {
-                "best_validation_row": validation_ranked[0]["row"],
-                "best_validation_J_p": validation_ranked[0]["validation_J_p"],
-                "second_validation_J_p": validation_ranked[1]["validation_J_p"],
-                "margin_to_second": validation_ranked[0]["validation_J_p"] - validation_ranked[1]["validation_J_p"],
-                "range_selected_rank": selected_row["validation_rank"],
-                "range_selected_J_p": selected_row["validation_J_p"],
+                "best_validation_row": ranked[0]["row"],
+                "best_validation_J_p": ranked[0]["validation_J_p"],
+                "second_validation_J_p": ranked[1]["validation_J_p"],
+                "margin_to_second": ranked[0]["validation_J_p"] - ranked[1]["validation_J_p"],
+                "selected_default_rank": selected_row["validation_rank"],
+                "selected_default_J_p": selected_row["validation_J_p"],
             },
             indent=2,
         )

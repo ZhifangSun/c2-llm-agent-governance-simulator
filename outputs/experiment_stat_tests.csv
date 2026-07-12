@@ -1,11 +1,11 @@
 comparison,metric,n,mean_diff,sd_diff,t_stat,p_norm_approx,cohen_dz
-full_framework - direct_llm,selected_gpi,10000,0.256011,0.033460,765.128932,0.000000,7.651289
-full_framework - evidence_only,selected_gpi,10000,0.153645,0.032676,470.204996,0.000000,4.702050
-full_framework - evidence_role,selected_gpi,10000,0.088780,0.032455,273.551051,0.000000,2.735511
-full_framework - evidence_critique,selected_gpi,10000,0.106358,0.031272,340.100699,0.000000,3.401007
-full_framework - direct_llm,selected_synthetic_utility,10000,0.001866,0.032687,5.708071,0.000000,0.057081
-full_framework - evidence_only,selected_synthetic_utility,10000,0.002925,0.033251,8.796816,0.000000,0.087968
-full_framework - direct_llm,selected_oracle_regret,10000,-0.001866,0.032687,-5.708071,0.000000,-0.057081
-full_framework - direct_llm,selected_traceability,10000,0.378610,0.125846,300.852382,0.000000,3.008524
-full_framework - direct_llm,selected_controllability,10000,0.650272,0.029841,2179.155357,0.000000,21.791554
-full_framework - direct_llm,alternative_rule_score,10000,0.193745,0.034041,569.160389,0.000000,5.691604
+full_framework - direct_llm,selected_gpi,10000,0.255631,0.033265,768.475540,0.000000,7.684755
+full_framework - evidence_only,selected_gpi,10000,0.154182,0.033012,467.052289,0.000000,4.670523
+full_framework - evidence_role,selected_gpi,10000,0.088782,0.033450,265.415553,0.000000,2.654156
+full_framework - evidence_critique,selected_gpi,10000,0.106250,0.031182,340.738310,0.000000,3.407383
+full_framework - direct_llm,selected_synthetic_utility,10000,0.001652,0.032362,5.106100,0.000000,0.051061
+full_framework - evidence_only,selected_synthetic_utility,10000,0.002775,0.033477,8.290700,0.000000,0.082907
+full_framework - direct_llm,selected_oracle_regret,10000,-0.001652,0.032362,-5.106100,0.000000,-0.051061
+full_framework - direct_llm,selected_traceability,10000,0.377412,0.125756,300.113647,0.000000,3.001136
+full_framework - direct_llm,selected_controllability,10000,0.650183,0.029678,2190.755578,0.000000,21.907556
+full_framework - direct_llm,alternative_rule_score,10000,0.193825,0.033696,575.212750,0.000000,5.752128

@@ -1,6 +1,6 @@
 comparison,metric,seed_batches,mean_diff,sd_diff,empirical_p025,empirical_p975,sesoi,within_equivalence_margin
-full_framework - direct_llm,selected_gpi,20,0.255507,0.001264,0.252175,0.256856,,
-full_framework - direct_llm,selected_synthetic_utility,20,0.001811,0.001681,-0.001554,0.004736,0.010000,1
-full_framework - direct_llm,selected_oracle_regret,20,-0.001811,0.001681,-0.005077,0.000325,0.010000,1
-full_framework - evidence_only,selected_gpi,20,0.154120,0.001662,0.151872,0.155974,,
-full_framework - evidence_critique,selected_gpi,20,0.105828,0.001695,0.103077,0.108494,,
+full_framework - direct_llm,selected_gpi,20,0.255160,0.001362,0.252998,0.257025,,
+full_framework - direct_llm,selected_synthetic_utility,20,0.002352,0.001506,-0.000474,0.004915,0.010000,1
+full_framework - direct_llm,selected_oracle_regret,20,-0.002352,0.001506,-0.005019,-0.000014,0.010000,1
+full_framework - evidence_only,selected_gpi,20,0.153178,0.001519,0.149467,0.155032,,
+full_framework - evidence_critique,selected_gpi,20,0.105686,0.001209,0.103337,0.107265,,

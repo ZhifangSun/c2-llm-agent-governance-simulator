@@ -114,7 +114,15 @@ Low-reliability verified-claim proportion is the fraction of all linked claims t
 
 Severe-issue acceptance ratio is the ratio of accepted severe issues to all detected severe issues.
 
-Weak-admission rate is the fraction of linked claims that are verified despite reliability below 0.55.
+## Parameter Calibration and Seeds
+
+The released configuration uses separate deterministic streams for calibration, validation, and test generation:
+
+- calibration seed: `20260710`
+- validation seed: `20261710`
+- test seed: `20262710`
+
+All nine L9 parameter rows are evaluated on the same 2,700 calibration scenarios. The selected default is a calibration-informed conservative default, not the unconstrained range-optimal setting. The pre-test constraints are `theta_e >= 0.55` and `p_q <= 0.82`.
 
 ## Alternative Rule-Audit Evaluator
 
@@ -138,6 +146,9 @@ The released diagnostic file `outputs/experiment_alternative_audit_diagnostics.c
 The main script exports raw and summary CSV files under `outputs/`. The most important files are:
 
 - `experiment_policy_results.csv`
+- `scenario_records.csv`
+- `scenario_claims.csv`
+- `candidate_coas.csv`
 - `experiment_comparison_summary.csv`
 - `experiment_public_method_results.csv`
 - `experiment_public_method_summary.csv`
