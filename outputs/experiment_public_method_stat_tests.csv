@@ -1,0 +1,12 @@
+comparison,metric,n,mean_diff,sd_diff,t_stat,p_norm_approx,cohen_dz
+ours - coa_gpt_style,selected_gpi,10000,0.229804,0.034262,670.725927,0.000000,6.707259
+ours - rag_coa_style,selected_gpi,10000,0.135264,0.033164,407.864885,0.000000,4.078649
+ours - autogen_style,selected_gpi,10000,0.122809,0.033420,367.470195,0.000000,3.674702
+ours - masmp_style,selected_gpi,10000,0.106088,0.033550,316.207561,0.000000,3.162076
+ours - coa_gpt_style,selected_synthetic_utility,10000,0.001702,0.033465,5.085511,0.000000,0.050855
+ours - rag_coa_style,selected_synthetic_utility,10000,0.002230,0.033056,6.745872,0.000000,0.067459
+ours - autogen_style,selected_synthetic_utility,10000,0.001840,0.032435,5.673065,0.000000,0.056731
+ours - masmp_style,selected_synthetic_utility,10000,0.001972,0.033128,5.952373,0.000000,0.059524
+ours - coa_gpt_style,selected_traceability,10000,0.344522,0.125881,273.689054,0.000000,2.736891
+ours - coa_gpt_style,selected_controllability,10000,0.576455,0.035702,1614.638124,0.000000,16.146381
+ours - coa_gpt_style,selected_oracle_regret,10000,-0.001702,0.033465,-5.085511,0.000000,-0.050855

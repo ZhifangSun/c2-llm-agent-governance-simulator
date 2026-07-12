@@ -1,0 +1,4 @@
+scenario_id,coa_id,gate,time_min,label,condition
+5482,s5482_y2,G1,25.84,G1: evidence sufficiency,verified/captured claims released to commander
+5482,s5482_y2,G2,41.87,G2: reversible-effect authorization,EW action bounded by ROE and evidence state
+5482,s5482_y2,G3,81.21,G3: COA release,terminal action remains commander-controlled
