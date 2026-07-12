@@ -10,7 +10,8 @@ The package contains a shareable symbolic simulator, synthetic scenario generato
 - `code/c2_experiments.py`: synthetic scenario generator, policy simulator, comparison experiments, ablations, sensitivity analysis, statistical tests, and aggregate figures.
 - `code/run_l9_calibration.py`: L9 orthogonal calibration and validation script.
 - `code/generate_coa_timeline_overlay.py`: data-driven COA execution timeline figures for the selected case study.
-- `outputs/experiment_*.csv`: raw and aggregate outputs used by the manuscript tables, diagnostics, and statistical tests.
+- `outputs/scenario_records.csv`, `outputs/scenario_claims.csv`, `outputs/candidate_coas.csv`: generated scenario-, claim-, and candidate-level records for the released test set.
+- `outputs/experiment_*.csv`: policy-level and aggregate outputs used by the manuscript tables, diagnostics, and statistical tests.
 - `outputs/l9_*.csv`: orthogonal calibration, range analysis, and validation outputs.
 - `outputs/coa_timeline_*.csv`: data records behind the COA execution timeline figures.
 - `figures/*.pdf`: generated experimental figures used in the manuscript.
@@ -45,4 +46,4 @@ Run the COA timeline figure script:
 python code/generate_coa_timeline_overlay.py
 ```
 
-The main script regenerates the `outputs/experiment_*.csv` files and the aggregate experimental figures. The calibration script regenerates `outputs/l9_calibration_results.csv`, `outputs/l9_range_analysis.csv`, and `outputs/l9_validation_results.csv`.
+The main script regenerates the scenario/candidate/claim CSV files, the `outputs/experiment_*.csv` files, and the aggregate experimental figures. The calibration script regenerates `outputs/l9_calibration_results.csv`, `outputs/l9_range_analysis.csv`, and `outputs/l9_validation_results.csv`. All scripts write to the repository-level `outputs/` and `figures/` directories.
