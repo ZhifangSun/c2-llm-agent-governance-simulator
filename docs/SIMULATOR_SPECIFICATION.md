@@ -124,7 +124,7 @@ The released configuration uses separate deterministic streams for calibration, 
 
 All nine L9 parameter rows are evaluated on the same 2,700 calibration scenarios. The selected default is a calibration-informed conservative default, not the unconstrained range-optimal setting. The pre-test constraints are `theta_e >= 0.55` and `p_q <= 0.82`.
 
-The sensitivity diagnostic uses common random numbers: each of the six settings is evaluated with the same 20 diagnostic seeds, the same 500 scenarios per seed, and the same stochastic stream within each seed. The factorial diagnostic also uses common random numbers: each of 10 diagnostic seeds evaluates the complete 32-combination design on the same 1,000 scenario/candidate sets and the same stochastic stream within that seed. The exported factorial effects report seed-level means, seed-level standard deviations, and empirical percentile ranges.
+The sensitivity diagnostic uses 20 stochastic replications on a fixed 500-scenario subset. Within each replication, all six settings share common random numbers and the same stochastic stream. The factorial diagnostic uses 10 stochastic replications on a fixed 1,000-scenario subset. Within each replication, all 32 combinations share common random numbers and the same stochastic stream. These diagnostics isolate parameter and mechanism changes from mechanism-level stochastic variation; they should not be read as independent scenario resampling. The exported factorial effects report seed-level means, seed-level standard deviations, and observed seed-level ranges.
 
 ## Alternative Rule-Audit Evaluator
 
@@ -170,3 +170,7 @@ The main script exports raw and summary CSV files under `outputs/`. The most imp
 - `experiment_scalability.csv`
 - `coa_timeline_overlay_case.csv`
 - `coa_timeline_baseline_comparison.csv`
+
+## Reported Runtime Environment
+
+The scalability table in the manuscript was generated on Microsoft Windows 10 Pro 10.0.19045, Intel Core i7-9750H CPU at 2.60 GHz with 6 cores and 12 logical processors, approximately 32 GB RAM, and Python 3.9.7. The scalability timer uses a single Python process with no multiprocessing and measures scenario generation plus symbolic policy evaluation in `run_experiment`. It excludes CSV writing, figure generation, L9 calibration, COA-timeline rendering, LLM inference, vector retrieval, network calls, interface latency, and human review.
