@@ -11,13 +11,13 @@ The package contains a shareable symbolic simulator, synthetic scenario generato
 - `code/run_l9_calibration.py`: L9 orthogonal calibration and validation script.
 - `code/generate_coa_timeline_overlay.py`: data-driven COA execution timeline figures for the selected case study.
 - `outputs/scenario_records.csv`, `outputs/scenario_claims.csv`, `outputs/candidate_coas.csv`: generated scenario-, claim-, and candidate-level records for the released test set.
-- `outputs/experiment_*.csv`: policy-level and aggregate outputs used by the manuscript tables, diagnostics, and statistical tests.
+- `outputs/experiment_*.csv`: policy-level and aggregate outputs used by the manuscript tables, diagnostics, common-random-number sensitivity/factorial checks, SESOI-band checks, and statistical tests.
 - `outputs/l9_*.csv`: orthogonal calibration, range analysis, and validation outputs.
 - `outputs/coa_timeline_*.csv`: data records behind the COA execution timeline figures.
 - `figures/*.pdf`: generated experimental figures used in the manuscript.
 - `docs/SIMULATOR_SPECIFICATION.md`: implemented simulator rules, parameter definitions, scenario distributions, and metric equations.
-- `config/calibration_config.json`: calibration seeds, L9 factor levels, and selected default parameters.
-- `experiment_config.json`: seeds, scenario counts, selected parameters, and reproduction commands.
+- `config/calibration_config.json`: canonical calibration/test configuration, seeds, L9 factor levels, selected default parameters, and common-random-number diagnostic settings.
+- `experiment_config.json`: compact human-readable summary of seeds, scenario counts, selected parameters, and reproduction commands; `config/calibration_config.json` is the authoritative machine-read configuration.
 - `requirements.txt`: Python dependencies.
 
 ## Reproduce
@@ -46,4 +46,4 @@ Run the COA timeline figure script:
 python code/generate_coa_timeline_overlay.py
 ```
 
-The main script regenerates the scenario/candidate/claim CSV files, the `outputs/experiment_*.csv` files, and the aggregate experimental figures. The calibration script regenerates `outputs/l9_calibration_results.csv`, `outputs/l9_range_analysis.csv`, and `outputs/l9_validation_results.csv`. All scripts write to the repository-level `outputs/` and `figures/` directories.
+The main script regenerates the scenario/candidate/claim CSV files, the `outputs/experiment_*.csv` files, and the aggregate experimental figures. The sensitivity diagnostic uses 20 common-random-number seeds with 500 scenarios per seed. The factorial diagnostic uses 10 common-random-number seeds and evaluates the full 32-combination design within each seed. The calibration script regenerates `outputs/l9_calibration_results.csv`, `outputs/l9_range_analysis.csv`, and `outputs/l9_validation_results.csv`. All scripts write to the repository-level `outputs/` and `figures/` directories.

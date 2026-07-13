@@ -30,8 +30,12 @@ def read_config():
         "public_method_seed": 20262841,
         "ablation_seed": 20262787,
         "sensitivity_seed_base": 20262910,
+        "sensitivity_seed_count": 20,
+        "sensitivity_scenarios_per_seed": 500,
         "seed_batch_seed_base": 20263710,
         "factorial_seed_base": 20267710,
+        "factorial_seed_count": 10,
+        "factorial_scenarios_per_seed": 1000,
         "selected_parameters": {"theta_e": 0.55, "p_q": 0.82, "p_g": 0.90, "lambda_l": 0.10},
     }
 
@@ -883,12 +887,24 @@ def run_sensitivity(scenarios):
     ]
     rows = []
     base_seed = CONFIG.get("sensitivity_seed_base", CONFIG.get("test_seed", 20262710) + 300)
-    for setting in settings:
-        seed = base_seed + len(setting["name"])
-        params = setting["params"]
-        policy = {**POLICIES["full_framework"], **setting["policy"]}
-        for scenario in scenarios[:2500]:
-            rows.append({"setting": setting["name"], **run_policy(scenario, "full_framework", policy, params)})
+    seed_count = CONFIG.get("sensitivity_seed_count", 20)
+    scenarios_per_seed = CONFIG.get("sensitivity_scenarios_per_seed", 500)
+    scenarios_subset = scenarios[:scenarios_per_seed]
+    for seed_idx in range(seed_count):
+        common_seed = base_seed + seed_idx * 37
+        for setting in settings:
+            seed = common_seed
+            params = setting["params"]
+            policy = {**POLICIES["full_framework"], **setting["policy"]}
+            for scenario in scenarios_subset:
+                rows.append(
+                    {
+                        "setting": setting["name"],
+                        "sensitivity_seed_index": seed_idx + 1,
+                        "sensitivity_seed": common_seed,
+                        **run_policy(scenario, "full_framework", policy, params),
+                    }
+                )
     return rows
 
 
@@ -938,6 +954,24 @@ def paired_batch_effects(batch_rows, policy_a, policy_b, metric, sesoi=None):
     return out
 
 
+def sesoi_band_checks(batch_rows, bands=(0.005, 0.010, 0.020)):
+    rows = []
+    for metric in ["selected_synthetic_utility", "selected_oracle_regret"]:
+        for band in bands:
+            result = paired_batch_effects(batch_rows, "full_framework", "direct_llm", metric, sesoi=band)
+            rows.append(
+                {
+                    "metric": metric,
+                    "sesoi_band": band,
+                    "mean_diff": result["mean_diff"],
+                    "empirical_p025": result["empirical_p025"],
+                    "empirical_p975": result["empirical_p975"],
+                    "within_sesoi_band": result["within_equivalence_margin"],
+                }
+            )
+    return rows
+
+
 def run_factorial_interactions(scenarios):
     global seed
     factors = ["evidence", "role", "flow", "critique", "gate"]
@@ -958,32 +992,11 @@ def run_factorial_interactions(scenarios):
         "gate": ("gate_strictness", 0.90),
     }
     design_rows = []
-    scenarios_subset = scenarios[:2000]
-    for mask in range(2 ** len(factors)):
-        policy = dict(base_low)
-        levels = {}
-        for idx, factor in enumerate(factors):
-            on = 1 if mask & (1 << idx) else 0
-            levels[factor] = on
-            if on:
-                key, value = high[factor]
-                policy[key] = value
-        policy_key = "f" + "".join(str(levels[factor]) for factor in factors)
-        policy["label"] = policy_key
-        seed = CONFIG.get("factorial_seed_base", CONFIG.get("test_seed", 20262710) + 5000) + mask
-        vals = [run_policy(scenario, policy_key, policy, PARAMS) for scenario in scenarios_subset]
-        agg = aggregate(vals, ["policy", "policy_label"], ["selected_gpi", "selected_controllability", "selected_traceability"])[0]
-        design_rows.append({**levels, **agg})
-
-    def effect(term):
-        plus = []
-        minus = []
-        for row in design_rows:
-            sign = 1
-            for factor in term:
-                sign *= 1 if row[factor] else -1
-            (plus if sign > 0 else minus).append(row["selected_gpi_mean"])
-        return sum(plus) / len(plus) - sum(minus) / len(minus)
+    seed_effect_rows = []
+    seed_count = CONFIG.get("factorial_seed_count", 10)
+    scenarios_per_seed = CONFIG.get("factorial_scenarios_per_seed", 1000)
+    scenarios_subset = scenarios[:scenarios_per_seed]
+    base_seed = CONFIG.get("factorial_seed_base", CONFIG.get("test_seed", 20262710) + 5000)
 
     terms = [
         ("evidence",),
@@ -997,7 +1010,69 @@ def run_factorial_interactions(scenarios):
         ("evidence", "flow"),
         ("role", "flow", "gate"),
     ]
-    effect_rows = [{"term": " x ".join(term), "gpi_effect": effect(term)} for term in terms]
+
+    def effect(design_subset, term):
+        plus = []
+        minus = []
+        for row in design_subset:
+            sign = 1
+            for factor in term:
+                sign *= 1 if row[factor] else -1
+            (plus if sign > 0 else minus).append(row["selected_gpi_mean"])
+        return sum(plus) / len(plus) - sum(minus) / len(minus)
+
+    for seed_idx in range(seed_count):
+        common_seed = base_seed + seed_idx * 37
+        seed_design_rows = []
+        for mask in range(2 ** len(factors)):
+            policy = dict(base_low)
+            levels = {}
+            for idx, factor in enumerate(factors):
+                on = 1 if mask & (1 << idx) else 0
+                levels[factor] = on
+                if on:
+                    key, value = high[factor]
+                    policy[key] = value
+            policy_key = "f" + "".join(str(levels[factor]) for factor in factors)
+            policy["label"] = policy_key
+            seed = common_seed
+            vals = [run_policy(scenario, policy_key, policy, PARAMS) for scenario in scenarios_subset]
+            agg = aggregate(vals, ["policy", "policy_label"], ["selected_gpi", "selected_controllability", "selected_traceability"])[0]
+            row = {
+                "factorial_seed_index": seed_idx + 1,
+                "factorial_seed": common_seed,
+                **levels,
+                **agg,
+            }
+            design_rows.append(row)
+            seed_design_rows.append(row)
+        for term in terms:
+            seed_effect_rows.append(
+                {
+                    "factorial_seed_index": seed_idx + 1,
+                    "factorial_seed": common_seed,
+                    "term": " x ".join(term),
+                    "gpi_effect": effect(seed_design_rows, term),
+                }
+            )
+
+    effect_rows = []
+    for term in [" x ".join(item) for item in terms]:
+        vals = [row["gpi_effect"] for row in seed_effect_rows if row["term"] == term]
+        s = stats(vals)
+        sorted_vals = sorted(vals)
+        lo = sorted_vals[max(0, math.floor(0.025 * (len(sorted_vals) - 1)))]
+        hi = sorted_vals[min(len(sorted_vals) - 1, math.floor(0.975 * (len(sorted_vals) - 1)))]
+        effect_rows.append(
+            {
+                "term": term,
+                "seed_count": len(vals),
+                "gpi_effect": s["mean"],
+                "gpi_effect_sd": s["sd"],
+                "gpi_effect_p025": lo,
+                "gpi_effect_p975": hi,
+            }
+        )
     return design_rows, effect_rows
 
 
@@ -1136,6 +1211,42 @@ def main():
             "selected_risk_penalty",
         ],
     )
+    sensitivity_seed_summary = aggregate(
+        sensitivity_rows,
+        ["setting", "sensitivity_seed_index", "sensitivity_seed"],
+        [
+            "selected_gpi",
+            "selected_synthetic_utility",
+            "selected_traceability",
+            "selected_controllability",
+            "cognitive_load",
+            "low_reliability_verified_claim_proportion",
+            "non_verified_linked_claim_ratio",
+            "selected_risk_penalty",
+        ],
+    )
+    selected_by_seed = {
+        row["sensitivity_seed_index"]: row
+        for row in sensitivity_seed_summary
+        if row["setting"] == "selected"
+    }
+    sensitivity_paired_deltas = []
+    for row in sensitivity_seed_summary:
+        baseline = selected_by_seed.get(row["sensitivity_seed_index"])
+        if row["setting"] == "selected" or not baseline:
+            continue
+        sensitivity_paired_deltas.append(
+            {
+                "setting": row["setting"],
+                "sensitivity_seed_index": row["sensitivity_seed_index"],
+                "sensitivity_seed": row["sensitivity_seed"],
+                "delta_gpi_vs_selected": row["selected_gpi_mean"] - baseline["selected_gpi_mean"],
+                "delta_low_reliability_verified_vs_selected": row["low_reliability_verified_claim_proportion_mean"]
+                - baseline["low_reliability_verified_claim_proportion_mean"],
+                "delta_non_verified_linked_claim_vs_selected": row["non_verified_linked_claim_ratio_mean"]
+                - baseline["non_verified_linked_claim_ratio_mean"],
+            }
+        )
     seed_batch_rows = run_seed_batches()
     seed_batch_tests = [
         paired_batch_effects(seed_batch_rows, "full_framework", "direct_llm", "selected_gpi"),
@@ -1144,6 +1255,7 @@ def main():
         paired_batch_effects(seed_batch_rows, "full_framework", "evidence_only", "selected_gpi"),
         paired_batch_effects(seed_batch_rows, "full_framework", "evidence_critique", "selected_gpi"),
     ]
+    sesoi_checks = sesoi_band_checks(seed_batch_rows)
     factorial_design, factorial_effects = run_factorial_interactions(scenarios)
     corr_diagnostics = correlation_diagnostics(rows)
     scalability = run_scalability()
@@ -1172,8 +1284,15 @@ def main():
     write_csv(OUT / "experiment_ablation_summary.csv", ablation_summary, list(ablation_summary[0].keys()))
     write_csv(OUT / "experiment_profile_summary.csv", profile_summary, list(profile_summary[0].keys()))
     write_csv(OUT / "experiment_sensitivity_summary.csv", sensitivity_summary, list(sensitivity_summary[0].keys()))
+    write_csv(OUT / "experiment_sensitivity_seed_summary.csv", sensitivity_seed_summary, list(sensitivity_seed_summary[0].keys()))
+    write_csv(
+        OUT / "experiment_sensitivity_paired_deltas.csv",
+        sensitivity_paired_deltas,
+        list(sensitivity_paired_deltas[0].keys()),
+    )
     write_csv(OUT / "experiment_seed_batch_summary.csv", seed_batch_rows, list(seed_batch_rows[0].keys()))
     write_csv(OUT / "experiment_seed_batch_tests.csv", seed_batch_tests, list(seed_batch_tests[0].keys()))
+    write_csv(OUT / "experiment_sesoi_band_checks.csv", sesoi_checks, list(sesoi_checks[0].keys()))
     write_csv(OUT / "experiment_factorial_design.csv", factorial_design, list(factorial_design[0].keys()))
     write_csv(OUT / "experiment_factorial_effects.csv", factorial_effects, list(factorial_effects[0].keys()))
     write_csv(OUT / "experiment_alternative_audit_diagnostics.csv", corr_diagnostics, list(corr_diagnostics[0].keys()))
@@ -1201,7 +1320,9 @@ def main():
         f"- Candidate COA records: {len(candidate_rows):,}",
         f"- Policy observations: {len(rows):,}",
         f"- Ablation observations: {len(ablation_rows):,}",
-        "- Sensitivity observations: 15,000",
+        f"- Sensitivity observations: {len(sensitivity_rows):,}",
+        f"- Sensitivity common-random-number seeds: {CONFIG.get('sensitivity_seed_count', 20)}",
+        f"- Factorial common-random-number seeds: {CONFIG.get('factorial_seed_count', 10)}",
         "- Scenario profiles: anti-UAV, open event, humanitarian C2",
         "",
         "## Public Method-Family Proxy Comparison",

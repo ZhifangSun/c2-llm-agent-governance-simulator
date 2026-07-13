@@ -124,6 +124,8 @@ The released configuration uses separate deterministic streams for calibration, 
 
 All nine L9 parameter rows are evaluated on the same 2,700 calibration scenarios. The selected default is a calibration-informed conservative default, not the unconstrained range-optimal setting. The pre-test constraints are `theta_e >= 0.55` and `p_q <= 0.82`.
 
+The sensitivity diagnostic uses common random numbers: each of the six settings is evaluated with the same 20 diagnostic seeds, the same 500 scenarios per seed, and the same stochastic stream within each seed. The factorial diagnostic also uses common random numbers: each of 10 diagnostic seeds evaluates the complete 32-combination design on the same 1,000 scenario/candidate sets and the same stochastic stream within that seed. The exported factorial effects report seed-level means, seed-level standard deviations, and empirical percentile ranges.
+
 ## Alternative Rule-Audit Evaluator
 
 The alternative audit evaluator is not used for COA selection. It is a weighting-robustness diagnostic, not an independent external validator.
@@ -154,8 +156,11 @@ The main script exports raw and summary CSV files under `outputs/`. The most imp
 - `experiment_public_method_summary.csv`
 - `experiment_full_metric_summary.csv`
 - `experiment_sensitivity_summary.csv`
+- `experiment_sensitivity_seed_summary.csv`
+- `experiment_sensitivity_paired_deltas.csv`
 - `experiment_seed_batch_summary.csv`
 - `experiment_seed_batch_tests.csv`
+- `experiment_sesoi_band_checks.csv`
 - `experiment_factorial_design.csv`
 - `experiment_factorial_effects.csv`
 - `l9_calibration_results.csv`

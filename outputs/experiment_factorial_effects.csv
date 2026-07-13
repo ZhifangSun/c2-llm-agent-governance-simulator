@@ -1,11 +1,11 @@
-term,gpi_effect
-evidence,0.092951
-role,0.042152
-flow,0.017589
-critique,0.022170
-gate,0.061013
-evidence x critique,-0.003663
-role x gate,0.000148
-critique x gate,0.000328
-evidence x flow,-0.000213
-role x flow x gate,-0.000329
+term,seed_count,gpi_effect,gpi_effect_sd,gpi_effect_p025,gpi_effect_p975
+evidence,10,0.092391,0.001215,0.090800,0.093863
+role,10,0.042202,0.000000,0.042202,0.042202
+flow,10,0.017600,0.000000,0.017600,0.017600
+critique,10,0.022208,0.000070,0.022112,0.022267
+gate,10,0.061175,0.000003,0.061170,0.061178
+evidence x critique,10,-0.003594,0.000080,-0.003718,-0.003530
+role x gate,10,0.000000,0.000000,-0.000000,0.000000
+critique x gate,10,0.000172,0.000004,0.000167,0.000176
+evidence x flow,10,0.000000,0.000000,-0.000000,0.000000
+role x flow x gate,10,-0.000000,0.000000,-0.000000,0.000000

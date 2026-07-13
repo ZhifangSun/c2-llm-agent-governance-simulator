@@ -1,0 +1,7 @@
+metric,sesoi_band,mean_diff,empirical_p025,empirical_p975,within_sesoi_band
+selected_synthetic_utility,0.005000,0.002352,-0.000474,0.004915,1
+selected_synthetic_utility,0.010000,0.002352,-0.000474,0.004915,1
+selected_synthetic_utility,0.020000,0.002352,-0.000474,0.004915,1
+selected_oracle_regret,0.005000,-0.002352,-0.005019,-0.000014,0
+selected_oracle_regret,0.010000,-0.002352,-0.005019,-0.000014,1
+selected_oracle_regret,0.020000,-0.002352,-0.005019,-0.000014,1
