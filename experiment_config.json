@@ -24,6 +24,14 @@
     "p_q": 0.82,
     "p_g": 0.90
   },
+  "reported_runtime_environment": {
+    "os": "Microsoft Windows 10 Pro 10.0.19045 64-bit",
+    "cpu": "Intel Core i7-9750H CPU @ 2.60GHz, 6 cores, 12 logical processors",
+    "ram_gb": 32,
+    "python": "3.9.7",
+    "execution": "single Python process, no multiprocessing",
+    "scalability_timer_scope": "scenario generation and symbolic policy evaluation in run_experiment; excludes CSV writing, figure generation, L9 calibration, COA-timeline rendering, LLM inference, vector retrieval, network calls, interface latency, and human review"
+  },
   "main_command": "python code/c2_experiments.py",
   "l9_calibration_command": "python code/run_l9_calibration.py",
   "timeline_command": "python code/generate_coa_timeline_overlay.py"
