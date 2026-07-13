@@ -1,7 +1,7 @@
 # C2 LLM-Agent Governance Simulator
 
 This repository is the public reproduction package for the manuscript
-"A Computational Governance Framework for LLM-Enabled C2 Organizational Cognitive Collaboration in the Military Decision-Making Process".
+"Modeling Governance Mechanisms for LLM-Agent Collaboration in the Military Decision-Making Process".
 
 The package contains a shareable symbolic simulator, synthetic scenario generator, experiment scripts, CSV outputs, and manuscript figures. It does not contain classified operational data, live LLM calls, human-subject data, or redistributed third-party raw datasets.
 
